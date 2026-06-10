@@ -1,0 +1,12 @@
+.DS_Store
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+build/
+out/
+install/
+*.user
+*.suo
+*.swp
+*.log
