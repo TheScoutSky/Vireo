@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 
 project(vireo
-    VERSION 0.1.0
+    VERSION 0.0.2
     DESCRIPTION "A lightweight SDL2 UI framework foundation"
     LANGUAGES CXX
 )

@@ -1,6 +1,8 @@
 #ifndef VIREO_BUTTON_H
 #define VIREO_BUTTON_H
 
+#include <functional>
+
 #include <vireo/core/color.hpp>
 #include <vireo/core/component.h>
 #include <vireo/core/componentbuilder.h>
