@@ -1,6 +1,7 @@
 #include <vireo/core/text.h>
 
 #include <SDL_rect.h>
+#include <SDL_ttf.h>
 
 #include <array>
 #include <cctype>
@@ -94,13 +95,28 @@ using Glyph = std::array<std::uint8_t, 7>;
     }
 }
 
-[[nodiscard]] Rect normalizedTextRect(const std::string& value, Rect rect, int scale) noexcept {
+[[nodiscard]] TextStyle makeFallbackTextStyle(Color color, int scale) {
+    TextStyle style;
+    style.color = color;
+    style.fallbackScale = scale;
+    return style;
+}
+
+[[nodiscard]] Rect normalizedTextRect(const std::string& value, Rect rect, const TextStyle& style) noexcept {
     if (rect.width <= 0) {
-        rect.width = static_cast<int>(value.size()) * 6 * scale;
+        if (!style.fontPath.empty()) {
+            rect.width = static_cast<int>(value.size()) * style.fontSize;
+        } else {
+            rect.width = static_cast<int>(value.size()) * 6 * style.fallbackScale;
+        }
     }
 
     if (rect.height <= 0) {
-        rect.height = 7 * scale;
+        if (!style.fontPath.empty()) {
+            rect.height = style.fontSize;
+        } else {
+            rect.height = 7 * style.fallbackScale;
+        }
     }
 
     return rect;
@@ -109,14 +125,31 @@ using Glyph = std::array<std::uint8_t, 7>;
 } // namespace
 
 TextComponent::TextComponent(std::string value, Rect rect, Color color, int scale)
-    : Component(normalizedTextRect(value, rect, scale).x, normalizedTextRect(value, rect, scale).y,
-                normalizedTextRect(value, rect, scale).width, normalizedTextRect(value, rect, scale).height, 0, 0, 0),
-      value_(std::move(value)), color_(color), scale_(scale) {}
+    : TextComponent(std::move(value), makeFallbackTextStyle(color, scale), rect) {}
+
+TextComponent::TextComponent(std::string value, TextStyle style, Rect rect)
+    : Component(normalizedTextRect(value, rect, style).x, normalizedTextRect(value, rect, style).y,
+                normalizedTextRect(value, rect, style).width, normalizedTextRect(value, rect, style).height, 0, 0, 0),
+      value_(std::move(value)), style_(std::move(style)), autoWidth_(rect.width <= 0), autoHeight_(rect.height <= 0) {}
+
+TextComponent::~TextComponent() {
+    releaseTexture();
+    releaseFont();
+}
 
 void TextComponent::handleSelf(SDL_Event*) {}
 
 void TextComponent::renderSelf(SDL_Renderer* renderer) {
-    SDL_SetRenderDrawColor(renderer, color_.r, color_.g, color_.b, color_.a);
+    if (!style_.fontPath.empty()) {
+        renderTtf(renderer);
+        return;
+    }
+
+    renderFallback(renderer);
+}
+
+void TextComponent::renderFallback(SDL_Renderer* renderer) {
+    SDL_SetRenderDrawColor(renderer, style_.color.r, style_.color.g, style_.color.b, style_.color.a);
 
     const SDL_Rect origin = getAbsoluteContentRect();
     int cursorX = origin.x;
@@ -132,16 +165,87 @@ void TextComponent::renderSelf(SDL_Renderer* renderer) {
                 }
 
                 SDL_Rect pixel{
-                    cursorX + column * scale_,
-                    origin.y + row * scale_,
-                    scale_,
-                    scale_,
+                    cursorX + column * style_.fallbackScale,
+                    origin.y + row * style_.fallbackScale,
+                    style_.fallbackScale,
+                    style_.fallbackScale,
                 };
                 SDL_RenderFillRect(renderer, &pixel);
             }
         }
 
-        cursorX += 6 * scale_;
+        cursorX += 6 * style_.fallbackScale;
+    }
+}
+
+void TextComponent::renderTtf(SDL_Renderer* renderer) {
+    loadFont();
+    rebuildTexture(renderer);
+
+    if (texture_ == nullptr) {
+        renderFallback(renderer);
+        return;
+    }
+
+    SDL_Rect destination = getAbsoluteContentRect();
+    destination.w = textureWidth_;
+    destination.h = textureHeight_;
+
+    SDL_RenderCopy(renderer, texture_, nullptr, &destination);
+}
+
+void TextComponent::loadFont() {
+    if (triedFontLoad_) {
+        return;
+    }
+
+    triedFontLoad_ = true;
+    font_ = TTF_OpenFont(style_.fontPath.c_str(), style_.fontSize);
+}
+
+void TextComponent::rebuildTexture(SDL_Renderer* renderer) {
+    if (font_ == nullptr || texture_ != nullptr && textureRenderer_ == renderer) {
+        return;
+    }
+
+    releaseTexture();
+
+    SDL_Color color{style_.color.r, style_.color.g, style_.color.b, style_.color.a};
+    SDL_Surface* surface = TTF_RenderUTF8_Blended(font_, value_.c_str(), color);
+    if (surface == nullptr) {
+        return;
+    }
+
+    texture_ = SDL_CreateTextureFromSurface(renderer, surface);
+    textureRenderer_ = renderer;
+
+    if (texture_ != nullptr) {
+        textureWidth_ = surface->w;
+        textureHeight_ = surface->h;
+
+        if (autoWidth_ || autoHeight_) {
+            const SDL_Rect current = getBaseRect();
+            setSize(autoWidth_ ? textureWidth_ : current.w, autoHeight_ ? textureHeight_ : current.h);
+        }
+    }
+
+    SDL_FreeSurface(surface);
+}
+
+void TextComponent::releaseTexture() noexcept {
+    if (texture_ != nullptr) {
+        SDL_DestroyTexture(texture_);
+        texture_ = nullptr;
+        textureRenderer_ = nullptr;
+        textureWidth_ = 0;
+        textureHeight_ = 0;
+    }
+}
+
+void TextComponent::releaseFont() noexcept {
+    if (font_ != nullptr) {
+        TTF_CloseFont(font_);
+        font_ = nullptr;
     }
 }
 
@@ -153,6 +257,9 @@ const std::string& TextComponent::value() const noexcept {
 
 Text::Text(std::string value, Rect rect, Color color, int scale)
     : component_(std::make_unique<TextComponent>(std::move(value), rect, color, scale)) {}
+
+Text::Text(std::string value, TextStyle style, Rect rect)
+    : component_(std::make_unique<TextComponent>(std::move(value), std::move(style), rect)) {}
 
 std::unique_ptr<Component> Text::build() && {
     return std::move(component_);

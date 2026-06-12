@@ -1,6 +1,8 @@
 #ifndef VIREO_STYLE_H
 #define VIREO_STYLE_H
 
+#include <string>
+
 #include <vireo/core/color.hpp>
 
 namespace vireo {
@@ -54,6 +56,13 @@ struct ButtonStyle {
     Color border{rgba(13, 16, 22)};
     int borderWidth{1};
     EdgeInsets padding{EdgeInsets::all(0)};
+};
+
+struct TextStyle {
+    Color color{colors::white};
+    std::string fontPath{};
+    int fontSize{24};
+    int fallbackScale{3};
 };
 
 [[nodiscard]] constexpr ButtonStyle buttonStyle(Color background, Color hover, Color pressed,

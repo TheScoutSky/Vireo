@@ -6,6 +6,6 @@ includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
 Name: vireo
 Description: @PROJECT_DESCRIPTION@
 Version: @PROJECT_VERSION@
-Requires: sdl2 SDL2_image
+Requires: sdl2 SDL2_image SDL2_ttf SDL2_mixer SDL2_net
 Libs: -L${libdir} -lvireo
 Cflags: -I${includedir}

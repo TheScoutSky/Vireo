@@ -26,8 +26,8 @@ Keep the public headers under `include/vireo`. That makes the include path stabl
 Use semantic versions:
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.0.5
+git push origin v0.0.5
 ```
 
 On GitHub, create a release from that tag and attach a source archive if needed.
@@ -60,7 +60,7 @@ include(FetchContent)
 FetchContent_Declare(
     vireo
     GIT_REPOSITORY https://github.com/YOUR_NAME/vireo.git
-    GIT_TAG v0.1.0
+    GIT_TAG v0.0.5
 )
 
 FetchContent_MakeAvailable(vireo)
@@ -74,7 +74,7 @@ Start with GitHub releases and CMake config files. When the API stabilizes:
 
 - Add a Conan recipe so users can install with `conan install`.
 - Add a vcpkg port so users can install with `vcpkg install vireo`.
-- Keep SDL2 as an explicit dependency instead of bundling it into the repository.
+- Keep SDL2 and the SDL2 add-ons as explicit dependencies instead of bundling them into the repository.
 
 ## Release Checklist
 

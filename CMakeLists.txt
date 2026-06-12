@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 
 project(vireo
-    VERSION 0.0.2
+    VERSION 0.0.5
     DESCRIPTION "A lightweight SDL2 UI framework foundation"
     LANGUAGES CXX
 )
@@ -19,6 +19,9 @@ endif()
 
 find_package(SDL2 2.0 CONFIG REQUIRED)
 find_package(SDL2_image 2.0 CONFIG REQUIRED)
+find_package(SDL2_ttf 2.0 CONFIG REQUIRED)
+find_package(SDL2_mixer 2.0 CONFIG REQUIRED)
+find_package(SDL2_net 2.0 CONFIG REQUIRED)
 
 add_library(vireo
     src/core/button.cpp
@@ -38,6 +41,7 @@ add_library(vireo
     src/platform/sdl_context.cpp
     src/platform/window.cpp
     src/ui/widget.cpp
+        include/vireo/core/when.h
 )
 add_library(vireo::vireo ALIAS vireo)
 
@@ -51,7 +55,14 @@ target_include_directories(vireo
         ${PROJECT_SOURCE_DIR}/src
 )
 
-target_link_libraries(vireo PUBLIC SDL2::SDL2 SDL2_image::SDL2_image)
+target_link_libraries(vireo
+    PUBLIC
+        SDL2::SDL2
+        SDL2_image::SDL2_image
+        SDL2_ttf::SDL2_ttf
+        SDL2_mixer::SDL2_mixer
+        SDL2_net::SDL2_net
+)
 
 target_compile_definitions(vireo
     PUBLIC
@@ -73,12 +84,23 @@ if(APPLE AND EXISTS "${SDL2_USER_PREFIX}/lib")
 endif()
 
 if(VIREO_BUILD_EXAMPLES)
+    set(VIREO_EXAMPLES_FONT_PATH "")
+    if(APPLE AND EXISTS "/System/Library/Fonts/SFNS.ttf")
+        set(VIREO_EXAMPLES_FONT_PATH "/System/Library/Fonts/SFNS.ttf")
+    elseif(APPLE AND EXISTS "/System/Library/Fonts/SFNSMono.ttf")
+        set(VIREO_EXAMPLES_FONT_PATH "/System/Library/Fonts/SFNSMono.ttf")
+    endif()
+
     add_executable(vireo_minimal examples/minimal.cpp)
     target_link_libraries(vireo_minimal PRIVATE vireo::vireo)
 
     add_executable(vireo_dsl_test examples/dsl_test.cpp)
     target_link_libraries(vireo_dsl_test PRIVATE vireo::vireo)
-    target_compile_definitions(vireo_dsl_test PRIVATE VIREO_EXAMPLES_ASSET_DIR="${PROJECT_SOURCE_DIR}/examples/assets")
+    target_compile_definitions(vireo_dsl_test
+        PRIVATE
+            VIREO_EXAMPLES_ASSET_DIR="${PROJECT_SOURCE_DIR}/examples/assets"
+            VIREO_EXAMPLES_FONT_PATH="${VIREO_EXAMPLES_FONT_PATH}"
+    )
 
     if(TARGET SDL2::SDL2main)
         target_link_libraries(vireo_minimal PRIVATE SDL2::SDL2main)

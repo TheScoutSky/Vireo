@@ -1,5 +1,7 @@
 #include <vireo/platform/sdl_context.hpp>
 
+#include <SDL_ttf.h>
+
 #include <utility>
 
 #include "sdl_error.hpp"
@@ -11,6 +13,14 @@ SdlContext::SdlContext(Uint32 flags) {
         detail::throw_sdl_error("SDL_InitSubSystem");
     }
 
+    if (TTF_WasInit() == 0) {
+        if (TTF_Init() != 0) {
+            SDL_QuitSubSystem(flags);
+            detail::throw_sdl_error("TTF_Init");
+        }
+        owns_ttf_ = true;
+    }
+
     flags_ = flags;
     owns_ = true;
 }
@@ -20,13 +30,15 @@ SdlContext::~SdlContext() {
 }
 
 SdlContext::SdlContext(SdlContext&& other) noexcept
-    : flags_{std::exchange(other.flags_, 0)}, owns_{std::exchange(other.owns_, false)} {}
+    : flags_{std::exchange(other.flags_, 0)}, owns_{std::exchange(other.owns_, false)},
+      owns_ttf_{std::exchange(other.owns_ttf_, false)} {}
 
 SdlContext& SdlContext::operator=(SdlContext&& other) noexcept {
     if (this != &other) {
         reset();
         flags_ = std::exchange(other.flags_, 0);
         owns_ = std::exchange(other.owns_, false);
+        owns_ttf_ = std::exchange(other.owns_ttf_, false);
     }
 
     return *this;
@@ -42,6 +54,10 @@ Uint32 SdlContext::flags() const noexcept {
 
 void SdlContext::reset() noexcept {
     if (owns_) {
+        if (owns_ttf_) {
+            TTF_Quit();
+            owns_ttf_ = false;
+        }
         SDL_QuitSubSystem(flags_);
         flags_ = 0;
         owns_ = false;

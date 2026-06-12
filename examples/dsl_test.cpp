@@ -1,3 +1,5 @@
+#include "vireo/core/when.h"
+
 #include <vireo/vireo.hpp>
 
 #include <SDL.h>
@@ -9,6 +11,10 @@
 
 #ifndef VIREO_EXAMPLES_ASSET_DIR
 #define VIREO_EXAMPLES_ASSET_DIR "."
+#endif
+
+#ifndef VIREO_EXAMPLES_FONT_PATH
+#define VIREO_EXAMPLES_FONT_PATH ""
 #endif
 
 int main(int argc, char** argv) {
@@ -48,41 +54,41 @@ int main(int argc, char** argv) {
             vireo::buttonStyle(vireo::colors::green, vireo::rgba(88, 218, 124), vireo::rgba(44, 154, 78));
         primaryButton.borderWidth = 2;
 
+        vireo::TextStyle titleText;
+        titleText.color = vireo::colors::white;
+        titleText.fontPath = VIREO_EXAMPLES_FONT_PATH;
+        titleText.fontSize = 42;
+        titleText.fallbackScale = 4;
+
+        vireo::TextStyle buttonText;
+        buttonText.color = vireo::colors::white;
+        buttonText.fontPath = VIREO_EXAMPLES_FONT_PATH;
+        buttonText.fontSize = 24;
+        buttonText.fallbackScale = 3;
+
         const std::string logoPath = std::string(VIREO_EXAMPLES_ASSET_DIR) + "/vireo.xpm";
 
-        auto ui = vireo::Screen(width, height)(
-            vireo::Center({0, 0, width, height})(
-                vireo::VStack({0, 0, width/4, height / 2}, 16, 0, vireo::Alignment::Center, vireo::Justify::Center)(
-                    vireo::Image(logoPath, {0, 0, 64, 64}),
-                    vireo::Text("CChess"),
-                    vireo::HorizontalDivider(),
-                    vireo::Spacer(),
-                    vireo::Button(vireo::colors::green, {0, 0, 200, 50}) (
-                        vireo::Center({0, 0, 200, 50}) (
-                            vireo::Text("Start")
-                        )
-                    ).onClick([]() {
-                        std::cout << "Start button clicked!\n";
-                    }),
-                    vireo::Button(vireo::colors::blue, {0, 0, 200, 50}) (
-                        vireo::Center({0, 0, 200, 50}) (
-                            vireo::Text("Options")
-                        )
-                    ).onClick([]() {
-                        std::cout << "Options button clicked!\n";
-                    }),
-                    vireo::Button(vireo::colors::red, {0, 0, 200, 50}) (
-                        vireo::Center({0, 0, 200, 50}) (
-                            vireo::Text("Exit")
-                        )
-                    ).onClick([]() {
-                        std::cout << "Start button clicked!\n";
-                    }),
-                    vireo::Spacer(16, 40)
+        bool test = false;
 
-                )
-            )
-        ).build();
+        auto ui =
+            vireo::Screen(width, height)(
+                vireo::Center({0, 0, width, height})(vireo::VStack({0, 0, width, height}, 16, 0,
+                                                                   vireo::Alignment::Center, vireo::Justify::Center)(
+                    vireo::Text("CChess", titleText), vireo::HorizontalDivider(), vireo::Spacer(),
+                    vireo::Button(vireo::colors::green,
+                                  {0, 0, 200, 50})(vireo::Center({0, 0, 200, 50})(vireo::Text("Start", buttonText)))
+                        .onClick([]() { std::cout << "Start button clicked!\n"; }),
+                    vireo::Button(vireo::colors::blue,
+                                  {0, 0, 200, 50})(vireo::Center({0, 0, 200, 50})(vireo::Text("Options", buttonText)))
+                        .onClick([]() { std::cout << "Options button clicked!\n"; }),
+                    vireo::Button(vireo::colors::red,
+                                  {0, 0, 200, 50})(vireo::Center({0, 0, 200, 50})(vireo::Text("Exit", buttonText)))
+                        .onClick([]() { std::cout << "Start button clicked!\n"; }),
+                        vireo::When(test, vireo::Text("Test", titleText), vireo::Button(vireo::colors::blue))
+
+
+                        )))
+                .build();
 
         bool running = true;
         Uint64 previousTicks = SDL_GetTicks64();

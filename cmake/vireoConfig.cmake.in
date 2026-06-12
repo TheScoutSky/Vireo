@@ -9,6 +9,9 @@ endif()
 
 find_dependency(SDL2 2.0 CONFIG)
 find_dependency(SDL2_image 2.0 CONFIG)
+find_dependency(SDL2_ttf 2.0 CONFIG)
+find_dependency(SDL2_mixer 2.0 CONFIG)
+find_dependency(SDL2_net 2.0 CONFIG)
 
 include("${CMAKE_CURRENT_LIST_DIR}/vireoTargets.cmake")
 

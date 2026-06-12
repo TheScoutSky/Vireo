@@ -25,6 +25,7 @@ class VIREO_API SdlContext final {
 
     Uint32 flags_{0};
     bool owns_{false};
+    bool owns_ttf_{false};
 };
 
 } // namespace vireo

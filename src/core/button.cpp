@@ -80,7 +80,7 @@ void ButtonComponent::renderSelf(SDL_Renderer* renderer) {
 }
 
 void ButtonComponent::onClick(std::function<void()> callback) noexcept {
-        onClick_ = std::move(callback);
+    onClick_ = std::move(callback);
 }
 
 void ButtonComponent::updateSelf(float) {}

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE instance-profile
+        SYSTEM "https://resources.jetbrains.com/writerside/1.0/product-profile.dtd">
+
+<instance-profile id="v"
+                 name="Vireo"
+                 start-page="Vireo.md">
+
+    <toc-element topic="Vireo.md"/>
+    <toc-element topic="Getting-Started.md"/>
+    <toc-element topic="Dynamic-UI.md"/>
+</instance-profile>

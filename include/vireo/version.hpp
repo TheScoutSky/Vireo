@@ -1,9 +1,9 @@
 #pragma once
 
 #define VIREO_VERSION_MAJOR 0
-#define VIREO_VERSION_MINOR 1
-#define VIREO_VERSION_PATCH 0
-#define VIREO_VERSION_STRING "0.1.0"
+#define VIREO_VERSION_MINOR 0
+#define VIREO_VERSION_PATCH 5
+#define VIREO_VERSION_STRING "0.0.5"
 
 namespace vireo {
 

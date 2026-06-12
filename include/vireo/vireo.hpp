@@ -18,6 +18,7 @@
 #include <vireo/core/style.h>
 #include <vireo/core/text.h>
 #include <vireo/core/verticalstack.h>
+#include <vireo/core/when.h>
 #include <vireo/platform/renderer.hpp>
 #include <vireo/platform/sdl_context.hpp>
 #include <vireo/platform/window.hpp>
