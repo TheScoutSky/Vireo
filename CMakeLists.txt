@@ -42,6 +42,7 @@ add_library(vireo
     src/platform/window.cpp
     src/ui/widget.cpp
         include/vireo/core/when.h
+        include/vireo/core/foreach.h
 )
 add_library(vireo::vireo ALIAS vireo)
 

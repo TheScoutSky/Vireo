@@ -1,51 +1,52 @@
 # Vireo
 
-Vireo is a lightweight, open-source UI framework for building SDL2-based GUIs in C++.
-It started as the UI foundation for the chess project "CChess", but the core idea is more general:
-compose small components into a readable UI tree.
+Vireo is a small SDL2-based UI framework for C++ applications.
+It is built around one central idea: describe the UI as a tree of components, then let that tree receive events, update,
+and render every frame.
 
-The preferred style is the builder DSL:
+The public API is intentionally close to normal C++:
 
 ```cpp
 auto ui = vireo::Screen(960, 540)(
-    vireo::Text("Hello Vireo")
+    vireo::Center({0, 0, 960, 540})(
+        vireo::Text("Hello Vireo")
+    )
 ).build();
 ```
 
-This keeps simple screens compact while still producing a normal runtime component tree underneath.
+The DSL builds regular `Component` objects underneath. After `.build()`, the result is a
+`std::unique_ptr<vireo::Component>` that can be rendered, updated, and changed at runtime.
 
-## Current Features
+## What Vireo Provides
 
-| Area | Description |
-|------|-------------|
-| Basic components | Text, buttons, panels, images, dividers, spacers, checkboxes, and layout helpers. |
-| Layout helpers | Vertical stacks, horizontal stacks, and centering helpers for common UI structures. |
-| Event handling | Components receive SDL events through the root component tree. |
-| Runtime tree | Components can own children, add children, remove children, and update/render recursively. |
-| Styling | Shared color helpers and style objects for text, buttons, and panels. |
+| Area | Features |
+|------|----------|
+| Platform wrappers | RAII wrappers for SDL initialization, windows, and renderers. |
+| Core tree | Parent/child component ownership, recursive event handling, update, and render flow. |
+| Builder DSL | Nested component construction with `Screen(...)(child1, child2).build()`. |
+| Layout | `Screen`, `Center`, `VStack`, `HStack`, `Spacer`, and dividers. |
+| Components | `Text`, `Button`, `Checkbox`, `Panel`, and `Image`. |
+| Styling | RGBA colors, named colors, semantic colors, `TextStyle`, `ButtonStyle`, and `PanelStyle`. |
+| Dynamic helpers | `When(...)` for conditional build-time components and experimental `ForEach` helpers for generated stacks. |
+| Utilities | Version constants, library metadata helpers, export macros, and the `Widget` interface. |
+| Publishing | CMake install/export support and Writerside documentation publishing through GitHub Pages. |
 
-## Design Goals
+## Recommended Reading Order
 
-Vireo should stay small and understandable. New features should make the DSL more expressive without hiding the fact
-that the UI is a tree of `Component` objects.
+1. [Getting Started](Getting-Started.md) for the smallest working app shape.
+2. [Project Setup](Project-Setup.md) for CMake, dependencies, examples, and tests.
+3. [Application Lifecycle](Application-Lifecycle.md) for SDL setup, event loops, and rendering.
+4. [Core Concepts](Core-Concepts.md) for the component tree and builder model.
+5. [Layout](Layout.md), [Components](Components.md), and [Styling](Styling.md) for the practical UI API.
+6. [Dynamic UI](Dynamic-UI.md) and [Runtime Tree](Runtime-Tree.md) for state-driven UI work.
+7. [Utilities](Utilities.md) for version, metadata, and helper interfaces.
+8. [Publishing](Publishing.md) for releases, CMake installation, and hosted docs.
 
-The next major direction is dynamic UI composition:
+## Current Status
 
-- Conditional components that are only added when a state value allows it.
-- Generated components from loops or collections.
-- Runtime add/remove APIs that feel natural from application code.
-- A popup or overlay system for modal UI, dialogs, and background dimming or blur.
+Vireo is still early and intentionally small. The strongest parts today are the tree model, simple layout, basic
+interactive components, and readable DSL composition.
 
-See [Dynamic UI](Dynamic-UI.md) for the planned design.
-
-## Contributing
-
-Contributions are welcome, whether they add features, fix bugs, improve examples, or expand the documentation.
-
-## License
-
-Vireo is licensed under the GNU General Public License v3.0.
-
-## Authors
-
-- [Antonio Wilczynski](https://github.com/TheScoutSky)
+Some APIs are still experimental. In particular, generated UI helpers such as `ForEach`, `VForEach`, and `HForEach`
+are being developed and should be treated as work in progress until they are included in the umbrella header and covered
+by tests.

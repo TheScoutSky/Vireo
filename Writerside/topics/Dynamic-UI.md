@@ -1,16 +1,51 @@
 # Dynamic UI
 
-Dynamic UI means that the component tree can react to application state instead of being completely fixed at startup.
-Vireo already has the important foundation: every built UI becomes a normal `Component` tree, and components can own,
-add, and remove children at runtime.
+Dynamic UI means that the component tree is created or changed from application state.
+Vireo currently supports two levels of dynamic behavior:
 
-This page describes the target design for the next dynamic features.
+- build-time helpers that decide what gets built;
+- runtime tree APIs that add and remove components after `.build()`.
 
-## 1. Conditional Components
+## Build-Time Vs Runtime
 
-Goal: show a component only when a condition is true.
+Build-time helpers run while the UI tree is being constructed:
 
-Vireo includes an initial `When(...)` helper for build-time conditions:
+```cpp
+auto ui = vireo::Screen(960, 540)(
+    vireo::When(showDebug, vireo::Text("Debug enabled"))
+).build();
+```
+
+If `showDebug` changes later, this already-built tree does not automatically update.
+To reflect new state, either rebuild a subtree or use runtime add/remove APIs.
+
+Runtime mutation happens after `.build()`:
+
+```cpp
+ui->addChild(100, vireo::Text("Runtime message").build());
+ui->removeChild(100);
+```
+
+See [Runtime Tree](Runtime-Tree.md) for details.
+
+## Conditional Components With When
+
+`When(...)` is a build-time conditional helper.
+It behaves like a component builder, but it may return no component.
+
+Include:
+
+```cpp
+#include <vireo/core/when.h>
+```
+
+The umbrella header also includes it:
+
+```cpp
+#include <vireo/vireo.hpp>
+```
+
+### Without Else
 
 ```cpp
 bool showDebugInfo = true;
@@ -21,7 +56,11 @@ auto ui = vireo::Screen(960, 540)(
 ).build();
 ```
 
-`When(...)` can also receive an else component:
+When the condition is `true`, the child is built.
+When the condition is `false`, `When(...)` returns `nullptr`, and the parent ignores it through the existing child-add
+path.
+
+### With Else
 
 ```cpp
 bool loggedIn = false;
@@ -35,106 +74,146 @@ auto ui = vireo::Screen(960, 540)(
 ).build();
 ```
 
-When the condition is false and no else component exists, no component is added. This is a build-time helper: changing
-the variable later does not automatically rebuild the UI tree.
+The true component and else component may be different builder types:
 
-## 2. Generated Components
+```cpp
+vireo::When(
+    isImportant,
+    vireo::Text("Important"),
+    vireo::Button(vireo::colors::blue)
+)
+```
 
-Goal: generate children from a list, vector, or other collection.
+Only the selected builder is consumed during `build()`.
 
-Today, this can also be done with normal C++:
+## Generated Components With ForEach
+
+`ForEach` is the current experimental direction for generated UI.
+The idea is to take a collection and a factory function, then produce a stack containing one generated child per item.
+
+Current local API shape:
+
+```cpp
+vireo::ForEach(direction, items, factory);
+vireo::VForEach(items, factory);
+vireo::HForEach(items, factory);
+```
+
+The experimental header is:
+
+```cpp
+#include <vireo/core/foreach.h>
+```
+
+At the current development stage, this header may not yet be included from `vireo/vireo.hpp`.
+Include it directly while working on the feature.
+
+### Why ForEach Uses A Factory
+
+Do not pass one component and try to reuse it.
+Components use `std::unique_ptr` ownership, so each generated child must be a fresh builder.
+
+Use a lambda:
 
 ```cpp
 std::vector<std::string> saves = {"Save 1", "Save 2", "Save 3"};
 
-auto list = vireo::VStack({0, 0, 320, 240}, 8);
-
-for (const auto& saveName : saves) {
-    list.get()->addChild(vireo::Text(saveName).build());
-}
-
-auto ui = vireo::Screen(960, 540)(
-    std::move(list)
-).build();
+auto list = vireo::VForEach(saves, [](const std::string& saveName) {
+    return vireo::Text(saveName);
+});
 ```
 
-Planned DSL direction:
+For a horizontal generated row:
 
 ```cpp
-auto ui = vireo::Screen(960, 540)(
-    vireo::ForEach(saves, [](const std::string& saveName) {
-        return vireo::Text(saveName);
-    })
-).build();
+std::vector<std::string> labels = {"Easy", "Normal", "Hard"};
+
+auto row = vireo::HForEach(labels, [](const std::string& label) {
+    return vireo::Button(vireo::colors::blue, {0, 0, 120, 42})(
+        vireo::Center({0, 0, 120, 42})(
+            vireo::Text(label)
+        )
+    );
+});
 ```
 
-The main challenge is ownership. Generated components should still end up as `std::unique_ptr<Component>` objects owned
-by their parent, just like manually written children.
+### Direction
 
-## 3. Adding And Removing Components Later
-
-Goal: allow the application to change the UI after it has already been built.
-
-The current runtime tree already supports this:
+The generic form uses `StackDirection`:
 
 ```cpp
-auto ui = vireo::Screen(960, 540)(
-    vireo::Text("Ready")
-).build();
-
-ui->addChild(100, vireo::Text("Runtime message").build());
-ui->removeChild(100);
+enum class StackDirection {
+    Horizontal,
+    Vertical
+};
 ```
 
-The planned improvement is not the storage itself, but the developer experience:
-
-- Clear names for important child IDs.
-- A safe way to keep references to components that may later be removed.
-- Dirty/layout invalidation rules after a child is added or removed.
-- Examples that show when to rebuild a subtree and when to mutate the existing tree.
-
-## 4. Popup System
-
-Goal: show modal UI above the normal screen, with optional background dimming or blur.
-
-A good popup system should probably be built as an overlay layer, not as a special case inside every component.
-
-Possible shape:
+Example:
 
 ```cpp
-auto ui = vireo::Screen(960, 540)(
-    vireo::OverlayHost()(
-        vireo::Text("Game screen")
-    )
-).build();
-
-// Later:
-popupHost->show(
-    vireo::Popup({280, 140, 400, 260})(
-        vireo::Text("Paused"),
-        vireo::Button(vireo::colors::blue, {0, 0, 160, 48})
-    )
+auto generated = vireo::ForEach(
+    vireo::StackDirection::Vertical,
+    items,
+    [](const auto& item) {
+        return vireo::Text(item);
+    }
 );
 ```
 
-Recommended implementation steps:
+### Intended Behavior
 
-1. Start with a modal overlay that draws a semi-transparent background.
-2. Add click blocking so events do not pass through the popup.
-3. Add popup positioning and close behavior.
-4. Add background blur after the overlay architecture works.
+The intended behavior is:
 
-Blur is the hardest part because SDL2 does not provide a high-level blur effect by itself. The first version can use a
-dark translucent backdrop; later versions can render the background into a texture and apply a simple blur pass.
+1. Create a `VerticalStack` or `HorizontalStack`.
+2. Loop over all items.
+3. Call the factory for each item.
+4. Build the returned child builder.
+5. Add the child to the stack.
+6. Return the built stack as one `std::unique_ptr<Component>`.
 
-## Suggested Learning Path
+This keeps `ForEach` compatible with the existing DSL because it still returns one component: the generated stack.
 
-Build these features in this order:
+## Runtime Generated UI
 
-1. Use normal C++ `if` statements and loops with `builder.get()->addChild(...)`.
-2. Wrap the repeated patterns into small helpers such as `When` and `ForEach`.
-3. Improve runtime add/remove ergonomics and document ownership rules.
-4. Build `OverlayHost` and `Popup` as regular components.
-5. Add dimming first, then blur.
+If the collection changes after the UI has already been built, the build-time `ForEach` result will not update by itself.
+Use a runtime subtree replacement pattern:
 
-This keeps each step understandable and makes it easier to test one idea at a time.
+```cpp
+constexpr int SaveListId = 20;
+
+ui->removeChild(SaveListId);
+ui->addChild(SaveListId,
+    vireo::VForEach(saves, [](const std::string& saveName) {
+        return vireo::Text(saveName);
+    }).build()
+);
+```
+
+This pattern is explicit and easy to debug.
+
+## Popup System Plan
+
+Popups are not implemented yet, but the recommended architecture is an overlay layer.
+
+The first version should probably provide:
+
+1. A root overlay host.
+2. A semi-transparent backdrop.
+3. A popup panel drawn above normal content.
+4. Event blocking so clicks do not pass through the popup.
+5. Close behavior.
+
+Background blur should come later.
+SDL2 does not provide a high-level blur effect, so a blur implementation would likely need a render-to-texture step and
+a custom blur pass.
+
+## Suggested Build Order
+
+For dynamic UI features, build in this order:
+
+1. `When(...)` for single conditional children.
+2. `VForEach(...)` and `HForEach(...)` for generated stacks.
+3. Runtime subtree replacement examples.
+4. Overlay host without blur.
+5. Modal popup behavior.
+6. Blur as a visual improvement after the architecture works.

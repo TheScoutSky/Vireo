@@ -1,38 +1,29 @@
 # Getting Started
 
-This page shows the basic shape of a Vireo application: initialize SDL, create a window and renderer, build a UI tree,
-then forward events, updates, and rendering through that tree.
+This page shows the basic shape of a Vireo application.
+The application creates SDL resources, builds a UI tree, forwards SDL events into that tree, updates it once per frame,
+and renders it through the SDL renderer.
 
-## Installation
+## Include Vireo
 
-Clone and build Vireo with CMake:
+Use the umbrella header for application code:
 
-```bash
-git clone https://github.com/TheScoutSky/vireo.git
-cmake -S vireo -B vireo/build -DCMAKE_BUILD_TYPE=Release
-cmake --build vireo/build
-cmake --install vireo/build --prefix "$HOME/.local"
+```cpp
+#include <vireo/vireo.hpp>
 ```
 
-Or include it with `FetchContent`:
+It includes the core components, layout helpers, styling helpers, platform wrappers, and version header.
 
-```cmake
-include(FetchContent)
+Experimental headers may still need explicit includes while they are being developed. For example, the current
+`ForEach` work-in-progress lives in:
 
-FetchContent_Declare(
-    vireo
-    GIT_REPOSITORY https://github.com/TheScoutSky/vireo.git
-    GIT_TAG v0.0.2
-)
-
-FetchContent_MakeAvailable(vireo)
-
-target_link_libraries(my_app PRIVATE vireo::vireo)
+```cpp
+#include <vireo/core/foreach.h>
 ```
 
-## Basic UI
+## Minimal Window
 
-Vireo components are usually composed with the builder DSL:
+The smallest useful Vireo program creates a context, a window, and a renderer:
 
 ```cpp
 #include <vireo/vireo.hpp>
@@ -54,42 +45,16 @@ int main(int, char**) {
         vireo::Window window(windowOptions);
         vireo::Renderer renderer(window);
 
-        auto ui = vireo::Screen(960, 540)(
-            vireo::Center({0, 0, 960, 540})(
-                vireo::VStack({0, 0, 960, 540}, 16, 0,
-                              vireo::Alignment::Center,
-                              vireo::Justify::Center)(
-                    vireo::Text("Hello Vireo"),
-                    vireo::Button(vireo::colors::green, {0, 0, 220, 56})(
-                        vireo::Center({0, 0, 220, 56})(
-                            vireo::Text("Start")
-                        )
-                    )
-                )
-            )
-        ).build();
-
         bool running = true;
-        Uint64 previousTicks = SDL_GetTicks64();
-
         while (running) {
             SDL_Event event{};
             while (SDL_PollEvent(&event) != 0) {
                 if (event.type == SDL_QUIT) {
                     running = false;
                 }
-
-                ui->handleEvents(&event);
             }
 
-            const Uint64 currentTicks = SDL_GetTicks64();
-            const float deltaTime = static_cast<float>(currentTicks - previousTicks) / 1000.0f;
-            previousTicks = currentTicks;
-
-            ui->update(deltaTime);
-
             renderer.clear(vireo::colors::slate);
-            ui->render(renderer.native_handle());
             renderer.present();
 
             SDL_Delay(16);
@@ -103,12 +68,74 @@ int main(int, char**) {
 }
 ```
 
-## Mental Model
+## Add A UI Tree
 
-The DSL builds a tree of `Component` objects. A `Screen` can contain a `Center`, a `Center` can contain a `VStack`,
-and the `VStack` can contain text, buttons, spacers, and other components.
+Most Vireo UIs start with a `Screen`, then use layout helpers and components inside it:
 
-After `.build()`, the result is a `std::unique_ptr<Component>`. From that point on, the UI behaves like a runtime tree:
-events, updates, and rendering start at the root and flow through the children.
+```cpp
+auto ui = vireo::Screen(960, 540)(
+    vireo::Center({0, 0, 960, 540})(
+        vireo::VStack({0, 0, 960, 540}, 16, 0,
+                      vireo::Alignment::Center,
+                      vireo::Justify::Center)(
+            vireo::Text("Hello Vireo"),
+            vireo::Button(vireo::colors::green, {0, 0, 220, 56})(
+                vireo::Center({0, 0, 220, 56})(
+                    vireo::Text("Start")
+                )
+            ).onClick([] {
+                std::cout << "Start clicked\n";
+            })
+        )
+    )
+).build();
+```
 
-For state-driven screens, generated lists, and popups, see [Dynamic UI](Dynamic-UI.md).
+`Screen(...)(...)` creates a builder. `.build()` consumes that builder and returns a
+`std::unique_ptr<vireo::Component>`.
+
+## Use The Tree Each Frame
+
+The built tree participates in the application loop:
+
+```cpp
+Uint64 previousTicks = SDL_GetTicks64();
+
+while (running) {
+    SDL_Event event{};
+    while (SDL_PollEvent(&event) != 0) {
+        if (event.type == SDL_QUIT) {
+            running = false;
+        }
+
+        ui->handleEvents(&event);
+    }
+
+    const Uint64 currentTicks = SDL_GetTicks64();
+    const float deltaTime = static_cast<float>(currentTicks - previousTicks) / 1000.0f;
+    previousTicks = currentTicks;
+
+    ui->update(deltaTime);
+
+    renderer.clear(vireo::colors::slate);
+    ui->render(renderer.native_handle());
+    renderer.present();
+
+    SDL_Delay(16);
+}
+```
+
+The usual order is:
+
+1. Poll SDL events.
+2. Send each event into `ui->handleEvents(&event)`.
+3. Compute frame delta time.
+4. Call `ui->update(deltaTime)`.
+5. Clear the renderer.
+6. Call `ui->render(renderer.native_handle())`.
+7. Present the renderer.
+
+## Next Steps
+
+Read [Core Concepts](Core-Concepts.md) next if the builder syntax feels unusual.
+Read [Layout](Layout.md) and [Components](Components.md) when you want to build real screens.

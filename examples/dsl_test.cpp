@@ -1,3 +1,4 @@
+#include "vireo/core/foreach.h"
 #include "vireo/core/when.h"
 
 #include <vireo/vireo.hpp>
@@ -68,7 +69,7 @@ int main(int argc, char** argv) {
 
         const std::string logoPath = std::string(VIREO_EXAMPLES_ASSET_DIR) + "/vireo.xpm";
 
-        bool test = false;
+        std::vector<std::string> testVec = {"One", "Two", "Three"};
 
         auto ui =
             vireo::Screen(width, height)(
@@ -84,7 +85,9 @@ int main(int argc, char** argv) {
                     vireo::Button(vireo::colors::red,
                                   {0, 0, 200, 50})(vireo::Center({0, 0, 200, 50})(vireo::Text("Exit", buttonText)))
                         .onClick([]() { std::cout << "Start button clicked!\n"; }),
-                        vireo::When(test, vireo::Text("Test", titleText), vireo::Button(vireo::colors::blue))
+                        vireo::HForEach(testVec, [buttonText](const std::string& item) {
+                            return vireo::Text(item, buttonText);
+                         })
 
 
                         )))

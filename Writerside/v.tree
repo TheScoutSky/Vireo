@@ -8,5 +8,14 @@
 
     <toc-element topic="Vireo.md"/>
     <toc-element topic="Getting-Started.md"/>
+    <toc-element topic="Project-Setup.md"/>
+    <toc-element topic="Application-Lifecycle.md"/>
+    <toc-element topic="Core-Concepts.md"/>
+    <toc-element topic="Layout.md"/>
+    <toc-element topic="Components.md"/>
+    <toc-element topic="Styling.md"/>
     <toc-element topic="Dynamic-UI.md"/>
+    <toc-element topic="Runtime-Tree.md"/>
+    <toc-element topic="Utilities.md"/>
+    <toc-element topic="Publishing.md"/>
 </instance-profile>
