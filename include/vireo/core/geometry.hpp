@@ -19,4 +19,8 @@ struct Rect {
     int height{0};
 };
 
+struct FillTag {};
+
+inline constexpr FillTag Fill{};
+
 } // namespace vireo

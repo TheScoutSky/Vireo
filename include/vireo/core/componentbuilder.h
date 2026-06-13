@@ -28,6 +28,11 @@ template <typename Self> class ComponentBuilder {
         return component_.get();
     }
 
+    Self&& fill() && {
+        component_->setFillParent(true);
+        return static_cast<Self&&>(*this);
+    }
+
   protected:
     ComponentBuilder() = default;
 

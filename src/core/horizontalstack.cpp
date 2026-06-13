@@ -11,7 +11,13 @@ HorizontalStackComponent::HorizontalStackComponent(Rect rect, int gap, int paddi
     : Component(rect.x, rect.y, rect.width, rect.height, 0, 0, 0), gap_(gap), padding_(padding), alignment_(alignment),
       justify_(justify) {}
 
+HorizontalStackComponent::HorizontalStackComponent(FillTag, int gap, int padding, Alignment alignment, Justify justify)
+    : HorizontalStackComponent(Rect{}, gap, padding, alignment, justify) {
+    setFillParent();
+}
+
 void HorizontalStackComponent::render(SDL_Renderer* renderer) {
+    applyLayoutConstraints();
     layoutChildren();
     Component::render(renderer);
 }
@@ -35,6 +41,7 @@ void HorizontalStackComponent::layoutChildren() {
             continue;
         }
 
+        child->applyLayoutConstraints();
         totalWidth += child->getBaseRect().w;
         ++visibleChildren;
     }
@@ -59,6 +66,7 @@ void HorizontalStackComponent::layoutChildren() {
             continue;
         }
 
+        child->applyLayoutConstraints();
         int childY = padding_;
         int childHeight = child->getBaseRect().h;
 
@@ -78,5 +86,8 @@ void HorizontalStackComponent::layoutChildren() {
 
 HorizontalStack::HorizontalStack(Rect rect, int gap, int padding, Alignment alignment, Justify justify)
     : ComponentBuilder(std::make_unique<HorizontalStackComponent>(rect, gap, padding, alignment, justify)) {}
+
+HorizontalStack::HorizontalStack(FillTag fill, int gap, int padding, Alignment alignment, Justify justify)
+    : ComponentBuilder(std::make_unique<HorizontalStackComponent>(fill, gap, padding, alignment, justify)) {}
 
 } // namespace vireo

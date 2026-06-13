@@ -10,6 +10,7 @@ namespace vireo {
 class VIREO_API CenterComponent : public Component {
   public:
     explicit CenterComponent(Rect rect = {0, 0, 320, 220});
+    explicit CenterComponent(FillTag fill);
 
     void render(SDL_Renderer* renderer) override;
     void handleSelf(SDL_Event* event) override;
@@ -23,6 +24,7 @@ class VIREO_API CenterComponent : public Component {
 class VIREO_API Center : public ComponentBuilder<Center> {
   public:
     explicit Center(Rect rect = {0, 0, 320, 220});
+    explicit Center(FillTag fill);
 };
 
 } // namespace vireo

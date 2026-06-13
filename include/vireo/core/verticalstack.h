@@ -12,6 +12,8 @@ class VIREO_API VerticalStackComponent : public Component {
   public:
     explicit VerticalStackComponent(Rect rect = {0, 0, 320, 300}, int gap = 12, int padding = 0,
                                     Alignment alignment = Alignment::Start, Justify justify = Justify::Start);
+    explicit VerticalStackComponent(FillTag fill, int gap = 12, int padding = 0,
+                                    Alignment alignment = Alignment::Start, Justify justify = Justify::Start);
 
     void render(SDL_Renderer* renderer) override;
     void handleSelf(SDL_Event* event) override;
@@ -31,6 +33,8 @@ class VIREO_API VerticalStack : public ComponentBuilder<VerticalStack> {
   public:
     explicit VerticalStack(Rect rect = {0, 0, 320, 300}, int gap = 12, int padding = 0,
                            Alignment alignment = Alignment::Start, Justify justify = Justify::Start);
+    explicit VerticalStack(FillTag fill, int gap = 12, int padding = 0, Alignment alignment = Alignment::Start,
+                           Justify justify = Justify::Start);
 };
 
 using VStack = VerticalStack;

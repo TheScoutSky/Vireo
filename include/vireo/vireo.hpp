@@ -8,6 +8,7 @@
 #include <vireo/core/componentbuilder.h>
 #include <vireo/core/divider.h>
 #include <vireo/core/export.hpp>
+#include <vireo/core/foreach.h>
 #include <vireo/core/geometry.hpp>
 #include <vireo/core/horizontalstack.h>
 #include <vireo/core/image.h>

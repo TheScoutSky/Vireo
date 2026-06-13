@@ -14,8 +14,9 @@ namespace vireo {
 
 class VIREO_API ScreenComponent : public Component {
   public:
-    ScreenComponent(int width, int height);
+    ScreenComponent(int width = 0, int height = 0);
 
+    void render(SDL_Renderer* renderer) override;
     void handleSelf(SDL_Event* event) override;
     void renderSelf(SDL_Renderer* renderer) override;
     void updateSelf(float deltaTime) override;
@@ -23,6 +24,7 @@ class VIREO_API ScreenComponent : public Component {
 
 class VIREO_API Screen : public ComponentBuilder<Screen> {
   public:
+    Screen();
     Screen(int width, int height);
 };
 

@@ -27,7 +27,7 @@ The DSL builds regular `Component` objects underneath. After `.build()`, the res
 | Layout | `Screen`, `Center`, `VStack`, `HStack`, `Spacer`, and dividers. |
 | Components | `Text`, `Button`, `Checkbox`, `Panel`, and `Image`. |
 | Styling | RGBA colors, named colors, semantic colors, `TextStyle`, `ButtonStyle`, and `PanelStyle`. |
-| Dynamic helpers | `When(...)` for conditional build-time components and experimental `ForEach` helpers for generated stacks. |
+| Dynamic helpers | `When(...)` for conditional build-time components and `ForEach` helpers for generated stacks. |
 | Utilities | Version constants, library metadata helpers, export macros, and the `Widget` interface. |
 | Publishing | CMake install/export support and Writerside documentation publishing through GitHub Pages. |
 
@@ -47,6 +47,5 @@ The DSL builds regular `Component` objects underneath. After `.build()`, the res
 Vireo is still early and intentionally small. The strongest parts today are the tree model, simple layout, basic
 interactive components, and readable DSL composition.
 
-Some APIs are still experimental. In particular, generated UI helpers such as `ForEach`, `VForEach`, and `HForEach`
-are being developed and should be treated as work in progress until they are included in the umbrella header and covered
-by tests.
+Some APIs are still early and may change as the framework grows. The current focus is improving dynamic layout,
+generated components, and popup support without making the core tree model harder to understand.

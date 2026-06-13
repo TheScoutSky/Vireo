@@ -88,10 +88,10 @@ Only the selected builder is consumed during `build()`.
 
 ## Generated Components With ForEach
 
-`ForEach` is the current experimental direction for generated UI.
-The idea is to take a collection and a factory function, then produce a stack containing one generated child per item.
+`ForEach` generates UI from a collection.
+It takes a collection and a factory function, then produces a stack containing one generated child per item.
 
-Current local API shape:
+API shape:
 
 ```cpp
 vireo::ForEach(direction, items, factory);
@@ -99,14 +99,11 @@ vireo::VForEach(items, factory);
 vireo::HForEach(items, factory);
 ```
 
-The experimental header is:
+The umbrella header includes it:
 
 ```cpp
-#include <vireo/core/foreach.h>
+#include <vireo/vireo.hpp>
 ```
-
-At the current development stage, this header may not yet be included from `vireo/vireo.hpp`.
-Include it directly while working on the feature.
 
 ### Why ForEach Uses A Factory
 
@@ -123,6 +120,9 @@ auto list = vireo::VForEach(saves, [](const std::string& saveName) {
 });
 ```
 
+When no rectangle is passed, `ForEach` measures the generated children and gives the generated stack a content-sized
+rectangle. This prevents generated rows from sitting inside an arbitrary default stack size.
+
 For a horizontal generated row:
 
 ```cpp
@@ -135,6 +135,53 @@ auto row = vireo::HForEach(labels, [](const std::string& label) {
         )
     );
 });
+```
+
+### Size Options
+
+Default: auto-size to generated content.
+
+```cpp
+auto row = vireo::HForEach(labels, [](const std::string& label) {
+    return vireo::Text(label);
+});
+```
+
+Fixed rectangle:
+
+```cpp
+auto row = vireo::HForEach({0, 0, 500, 80}, labels, [](const std::string& label) {
+    return vireo::Text(label);
+});
+```
+
+Fill the parent content rectangle:
+
+```cpp
+auto row = vireo::HForEach(vireo::Fill, labels, [](const std::string& label) {
+    return vireo::Text(label);
+});
+```
+
+All variants also accept stack layout options after the factory:
+
+```cpp
+auto row = vireo::HForEach(
+    labels,
+    [](const std::string& label) {
+        return vireo::Text(label);
+    },
+    16,
+    8,
+    vireo::Alignment::Center,
+    vireo::Justify::Center
+);
+```
+
+Those trailing values are:
+
+```text
+gap, padding, alignment, justify
 ```
 
 ### Direction
@@ -164,14 +211,32 @@ auto generated = vireo::ForEach(
 
 The intended behavior is:
 
-1. Create a `VerticalStack` or `HorizontalStack`.
-2. Loop over all items.
-3. Call the factory for each item.
-4. Build the returned child builder.
-5. Add the child to the stack.
-6. Return the built stack as one `std::unique_ptr<Component>`.
+1. Build one child for every item.
+2. Measure the generated children when no explicit size is provided.
+3. Create a `VerticalStack` or `HorizontalStack`.
+4. Add the generated children to the stack.
+5. Return the built stack as one `std::unique_ptr<Component>`.
 
 This keeps `ForEach` compatible with the existing DSL because it still returns one component: the generated stack.
+
+## Resize-Safe Dynamic Layout
+
+Use `Screen()` and `Fill` containers when generated or conditional content should remain centered after resizing:
+
+```cpp
+auto ui = vireo::Screen()(
+    vireo::Center(vireo::Fill)(
+        vireo::VStack(vireo::Fill, 16, 0,
+                      vireo::Alignment::Center,
+                      vireo::Justify::Center)(
+            vireo::Text("Menu"),
+            vireo::HForEach(items, [](const std::string& item) {
+                return vireo::Text(item);
+            })
+        )
+    )
+).build();
+```
 
 ## Runtime Generated UI
 

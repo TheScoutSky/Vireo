@@ -45,6 +45,7 @@ void Component::addChild(const int id, Component* child) {
     if (child != nullptr) {
         child->parent = this;
         children[id] = child;
+        markDirty();
     }
 }
 
@@ -77,10 +78,12 @@ void Component::removeChild(const int id) {
                                                return ownedChild.get() == rawChild;
                                            }),
                             ownedChildren.end());
+        markDirty();
         return;
     }
 
     children.erase(id);
+    markDirty();
 }
 
 void Component::removeChild(Component* child) {
@@ -95,6 +98,7 @@ void Component::removeChild(Component* child) {
                                                        return ownedChild.get() == child;
                                                    }),
                                     ownedChildren.end());
+                markDirty();
                 break;
             }
         }
@@ -109,6 +113,7 @@ void Component::removeAllChildren() {
     }
     children.clear();
     ownedChildren.clear();
+    markDirty();
 }
 
 std::vector<Component*> Component::getChildren() {
@@ -132,11 +137,37 @@ Component* Component::getParent() const {
     return parent;
 }
 
+bool Component::fillsParent() const {
+    return fillParent;
+}
+
+void Component::applyLayoutConstraints() {
+    if (!fillParent || parent == nullptr) {
+        return;
+    }
+
+    const SDL_Rect parentBase = parent->base;
+    const SDL_Rect parentContent = parent->content;
+    const SDL_Rect fillBounds{
+        parentContent.x - parentBase.x,
+        parentContent.y - parentBase.y,
+        std::max(0, parentContent.w),
+        std::max(0, parentContent.h),
+    };
+
+    if (base.x == fillBounds.x && base.y == fillBounds.y && base.w == fillBounds.w && base.h == fillBounds.h) {
+        return;
+    }
+
+    setBounds(fillBounds);
+}
+
 // ----------------------------------- //
 // Rendering                           //
 // ----------------------------------- //
 
 void Component::render(SDL_Renderer* renderer) {
+    applyLayoutConstraints();
     renderSelf(renderer);
     for (const auto& [id, child] : children) {
         child->render(renderer);
@@ -218,6 +249,15 @@ void Component::setBounds(const SDL_Rect& rect) {
 void Component::setPadding(EdgeInsets padding) {
     paddingInsets = padding;
     rebuildContentRect();
+    markDirty();
+}
+
+void Component::setFillParent(bool fill) {
+    if (fillParent == fill) {
+        return;
+    }
+
+    fillParent = fill;
     markDirty();
 }
 

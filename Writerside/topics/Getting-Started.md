@@ -14,13 +14,6 @@ Use the umbrella header for application code:
 
 It includes the core components, layout helpers, styling helpers, platform wrappers, and version header.
 
-Experimental headers may still need explicit includes while they are being developed. For example, the current
-`ForEach` work-in-progress lives in:
-
-```cpp
-#include <vireo/core/foreach.h>
-```
-
 ## Minimal Window
 
 The smallest useful Vireo program creates a context, a window, and a renderer:
@@ -73,9 +66,9 @@ int main(int, char**) {
 Most Vireo UIs start with a `Screen`, then use layout helpers and components inside it:
 
 ```cpp
-auto ui = vireo::Screen(960, 540)(
-    vireo::Center({0, 0, 960, 540})(
-        vireo::VStack({0, 0, 960, 540}, 16, 0,
+auto ui = vireo::Screen()(
+    vireo::Center(vireo::Fill)(
+        vireo::VStack(vireo::Fill, 16, 0,
                       vireo::Alignment::Center,
                       vireo::Justify::Center)(
             vireo::Text("Hello Vireo"),
@@ -91,7 +84,8 @@ auto ui = vireo::Screen(960, 540)(
 ).build();
 ```
 
-`Screen(...)(...)` creates a builder. `.build()` consumes that builder and returns a
+`Screen(...)(...)` creates a builder. `Screen()` follows the renderer output size, so the layout can stay centered when
+the window is resized. `.build()` consumes the builder and returns a
 `std::unique_ptr<vireo::Component>`.
 
 ## Use The Tree Each Frame

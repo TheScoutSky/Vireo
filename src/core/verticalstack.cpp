@@ -10,7 +10,13 @@ VerticalStackComponent::VerticalStackComponent(Rect rect, int gap, int padding, 
     : Component(rect.x, rect.y, rect.width, rect.height, 0, 0, 0), gap_(gap), padding_(padding), alignment_(alignment),
       justify_(justify) {}
 
+VerticalStackComponent::VerticalStackComponent(FillTag, int gap, int padding, Alignment alignment, Justify justify)
+    : VerticalStackComponent(Rect{}, gap, padding, alignment, justify) {
+    setFillParent();
+}
+
 void VerticalStackComponent::render(SDL_Renderer* renderer) {
+    applyLayoutConstraints();
     layoutChildren();
     Component::render(renderer);
 }
@@ -34,6 +40,7 @@ void VerticalStackComponent::layoutChildren() {
             continue;
         }
 
+        child->applyLayoutConstraints();
         totalHeight += child->getBaseRect().h;
         ++visibleChildren;
     }
@@ -58,6 +65,7 @@ void VerticalStackComponent::layoutChildren() {
             continue;
         }
 
+        child->applyLayoutConstraints();
         int childX = padding_;
         int childWidth = child->getBaseRect().w;
 
@@ -77,5 +85,8 @@ void VerticalStackComponent::layoutChildren() {
 
 VerticalStack::VerticalStack(Rect rect, int gap, int padding, Alignment alignment, Justify justify)
     : ComponentBuilder(std::make_unique<VerticalStackComponent>(rect, gap, padding, alignment, justify)) {}
+
+VerticalStack::VerticalStack(FillTag fill, int gap, int padding, Alignment alignment, Justify justify)
+    : ComponentBuilder(std::make_unique<VerticalStackComponent>(fill, gap, padding, alignment, justify)) {}
 
 } // namespace vireo

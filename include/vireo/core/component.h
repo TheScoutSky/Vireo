@@ -60,14 +60,18 @@ class VIREO_API Component {
     void setSize(int width, int height);
     void setBounds(const SDL_Rect& rect);
     void setPadding(EdgeInsets padding);
+    void setFillParent(bool fill = true);
 
     std::vector<Component*> getChildren();
     Component* getChild(int id);
     [[nodiscard]] Component* getParent() const;
+    [[nodiscard]] bool fillsParent() const;
+    void applyLayoutConstraints();
 
   private:
     // --- Variables --- //
     bool dirty = false;
+    bool fillParent = false;
 
     SDL_Rect base{};
     SDL_Rect content{};

@@ -9,6 +9,7 @@
 #include <exception>
 #include <iostream>
 #include <string>
+#include <vector>
 
 #ifndef VIREO_EXAMPLES_ASSET_DIR
 #define VIREO_EXAMPLES_ASSET_DIR "."
@@ -72,9 +73,9 @@ int main(int argc, char** argv) {
         std::vector<std::string> testVec = {"One", "Two", "Three"};
 
         auto ui =
-            vireo::Screen(width, height)(
-                vireo::Center({0, 0, width, height})(vireo::VStack({0, 0, width, height}, 16, 0,
-                                                                   vireo::Alignment::Center, vireo::Justify::Center)(
+            vireo::Screen()(
+                vireo::Center(vireo::Fill)(vireo::VStack(vireo::Fill, 16, 0, vireo::Alignment::Center,
+                                                         vireo::Justify::Center)(
                     vireo::Text("CChess", titleText), vireo::HorizontalDivider(), vireo::Spacer(),
                     vireo::Button(vireo::colors::green,
                                   {0, 0, 200, 50})(vireo::Center({0, 0, 200, 50})(vireo::Text("Start", buttonText)))
@@ -85,9 +86,8 @@ int main(int argc, char** argv) {
                     vireo::Button(vireo::colors::red,
                                   {0, 0, 200, 50})(vireo::Center({0, 0, 200, 50})(vireo::Text("Exit", buttonText)))
                         .onClick([]() { std::cout << "Start button clicked!\n"; }),
-                        vireo::HForEach(testVec, [buttonText](const std::string& item) {
-                            return vireo::Text(item, buttonText);
-                         })
+                    vireo::HForEach(testVec,
+                                    [buttonText](const std::string& item) { return vireo::Text(item, buttonText); })
 
 
                         )))

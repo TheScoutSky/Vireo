@@ -44,6 +44,7 @@ void setPosition(int x, int y);
 void setSize(int width, int height);
 void setBounds(const SDL_Rect& rect);
 void setPadding(vireo::EdgeInsets padding);
+void setFillParent(bool fill = true);
 ```
 
 `Component` is abstract. Concrete components implement:
@@ -164,6 +165,30 @@ SDL_Rect absoluteContent = component->getAbsoluteContentRect();
 ```
 
 Rendering and hit testing usually use absolute rectangles.
+
+## Fill Layout
+
+Components can be marked as filling their parent content rectangle:
+
+```cpp
+component->setFillParent();
+```
+
+For builder-based code, use either a `Fill` constructor:
+
+```cpp
+vireo::Center(vireo::Fill)(...)
+vireo::VStack(vireo::Fill)(...)
+```
+
+or the generic builder shortcut:
+
+```cpp
+vireo::Panel({0, 0, 0, 0}).fill()(...)
+```
+
+During rendering, a fill component resolves its local bounds from its parent's content rectangle. This is what allows
+layouts to keep using the full window after a resize or fullscreen change.
 
 ## Dirty State
 

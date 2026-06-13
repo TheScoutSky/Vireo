@@ -18,7 +18,7 @@ The current layout helpers are:
 `Screen` is usually the root of a UI tree:
 
 ```cpp
-auto ui = vireo::Screen(960, 540)(
+auto ui = vireo::Screen()(
     vireo::Text("Hello")
 ).build();
 ```
@@ -26,10 +26,54 @@ auto ui = vireo::Screen(960, 540)(
 Constructor:
 
 ```cpp
+vireo::Screen();
 vireo::Screen(int width, int height);
 ```
 
-`Screen` itself does not draw anything. It provides a root component with the requested size.
+`Screen` itself does not draw anything. When rendered, it reads the renderer output size and updates itself to fill the
+current window. It also reacts to SDL window resize events. This keeps the root bounds correct when the window is resized
+or switched to fullscreen.
+
+Use `Screen(width, height)` when you want an initial size before the first render pass. Use `Screen()` when the renderer
+size should fully drive the root size.
+
+## Fill Sizing
+
+Some layout components can be constructed with `vireo::Fill`:
+
+```cpp
+vireo::Center(vireo::Fill)(...)
+vireo::VStack(vireo::Fill, 16, 0, vireo::Alignment::Center, vireo::Justify::Center)(...)
+vireo::HStack(vireo::Fill)(...)
+```
+
+`Fill` means: fill the parent component's content rectangle.
+
+Every `ComponentBuilder` also has a `.fill()` shortcut:
+
+```cpp
+vireo::Panel({0, 0, 0, 0}).fill()(
+    vireo::Text("Fills parent content")
+)
+```
+
+For fullscreen-safe screens, the usual pattern is:
+
+```cpp
+auto ui = vireo::Screen()(
+    vireo::Center(vireo::Fill)(
+        vireo::VStack(vireo::Fill, 16, 0,
+                      vireo::Alignment::Center,
+                      vireo::Justify::Center)(
+            vireo::Text("Resizable"),
+            vireo::Button(vireo::colors::green)
+        )
+    )
+).build();
+```
+
+Fixed rectangles still work, but they stay fixed. If a centered menu should remain centered after resizing, the
+containers around it should usually use `Fill`.
 
 ## Center
 
@@ -45,6 +89,7 @@ Constructor:
 
 ```cpp
 vireo::Center(vireo::Rect rect = {0, 0, 320, 220});
+vireo::Center(vireo::Fill);
 ```
 
 During render, `Center` reads each child size and sets the child's position to:
@@ -75,6 +120,14 @@ Constructor:
 ```cpp
 vireo::VerticalStack(
     vireo::Rect rect = {0, 0, 320, 300},
+    int gap = 12,
+    int padding = 0,
+    vireo::Alignment alignment = vireo::Alignment::Start,
+    vireo::Justify justify = vireo::Justify::Start
+);
+
+vireo::VerticalStack(
+    vireo::Fill,
     int gap = 12,
     int padding = 0,
     vireo::Alignment alignment = vireo::Alignment::Start,
@@ -115,6 +168,14 @@ Constructor:
 ```cpp
 vireo::HorizontalStack(
     vireo::Rect rect = {0, 0, 400, 80},
+    int gap = 12,
+    int padding = 0,
+    vireo::Alignment alignment = vireo::Alignment::Start,
+    vireo::Justify justify = vireo::Justify::Start
+);
+
+vireo::HorizontalStack(
+    vireo::Fill,
     int gap = 12,
     int padding = 0,
     vireo::Alignment alignment = vireo::Alignment::Start,
@@ -210,9 +271,9 @@ vireo::VerticalDivider(int height = 80, vireo::Color color = vireo::rgba(82, 90,
 A common pattern is:
 
 ```cpp
-vireo::Screen(width, height)(
-    vireo::Center({0, 0, width, height})(
-        vireo::VStack({0, 0, width, height}, 16, 0,
+vireo::Screen()(
+    vireo::Center(vireo::Fill)(
+        vireo::VStack(vireo::Fill, 16, 0,
                       vireo::Alignment::Center,
                       vireo::Justify::Center)(
             vireo::Text("CChess"),
@@ -223,4 +284,5 @@ vireo::Screen(width, height)(
 )
 ```
 
-That gives you a root screen, a centered layout area, and a vertical menu.
+That gives you a root screen, a centered layout area, and a vertical menu that stays centered after window resizing or
+fullscreen changes.
